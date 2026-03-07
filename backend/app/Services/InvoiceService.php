@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\DTO\InvoiceDTO;
+use App\DTO\UpdateInvoiceDTO;
 use App\Models\Invoice;
 use DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,7 +32,7 @@ class InvoiceService
         });
     }
 
-    public function updateInvoice(Invoice $invoice, InvoiceDTO $dto): Invoice
+    public function updateInvoice(Invoice $invoice, UpdateInvoiceDTO $dto): Invoice
     {
         if ($invoice->status !== 'pending') {
             throw new DomainException('Only pending invoices can be updated.');

@@ -1,34 +1,25 @@
 <script setup lang="ts">
-const config = useRuntimeConfig()
-const { data: response, pending, error } = await useFetch<LaravelPagination<Invoice>>('/invoices', {
-  baseURL: config.public.apiBase
-})
+const { getInvoices } = useInvoices()
+const { data: response, pending, refresh, error } = await getInvoices()
 const handleSelect = (row: any) => {
   const id = row.id;
   navigateTo(`/${id}`);
 }
-
 const isOpen = ref<boolean>(false);
 const selectedInvoice = ref<Invoice | null>(null)
-const openCreateModal = () => {
-  selectedInvoice.value = null
+const openModal = (invoice: Invoice | null = null) => {
+  selectedInvoice.value = invoice ? { ...invoice } : null
   isOpen.value = true
 }
-
-const openEditModal = (invoice: Invoice) => {
-  selectedInvoice.value = { ...invoice }
-  isOpen.value = true
-}
-
-const handleSaved = () => {
+const handleSaved = async () => {
   isOpen.value = false
-  refresh()
+  await refresh()
 }
 </script>
 
 <template>
   <div class="mb-6 flex justify-end">
-    <UButton label="Створити інвойс" @click="openCreateModal" />
+    <UButton label="Створити інвойс" @click="openModal" />
   </div>
   <div v-if="error" class="mb-6">
     <UAlert
@@ -49,21 +40,21 @@ const handleSaved = () => {
           <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1" @click="isOpen = false" />
         </div>
       </template>
+      <div class="p-4" v-if="isOpen">
+        <InvoiceForm
+            :initial-data="selectedInvoice"
+            @saved="handleSaved"
+            @cancel="isOpen = false"
+        />
+      </div>
     </UCard>
-  <div class="p-4" v-if="isOpen">
-    <InvoiceForm
-        :initial-data="selectedInvoice"
-        @saved="handleSaved"
-        @cancel="isOpen = false"
-    />
-  </div>
   </UModal>
 
   <InvoiceTable
       :items="response?.data || []"
       :loading="pending"
       @select="handleSelect"
-      @edit="openEditModal"
+      @edit="openModal"
   />
 </template>
 

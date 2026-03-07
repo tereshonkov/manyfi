@@ -1,81 +1,43 @@
 <script setup lang="ts">
-import {z} from 'zod'
-
-const schema = z.object({
-  supplier_name: z
-      .string()
-      .min(3, {message: 'Назва має бути не менше 3 символів'}),
-
-  net_amount: z
-      .coerce
-      .number()
-      .positive({message: 'Сума має бути більше 0'}),
-
-  vat_amount: z
-      .coerce
-      .number()
-      .min(0, {message: 'ПДВ не може бути від’ємним'}),
-
-  due_date: z
-      .string()
-      .min(1, {message: 'Оберіть дату оплати'}),
-
-  status: z.string()
-})
-
-type Schema = z.output<typeof schema>
-
 const props = defineProps<{
   initialData?: Invoice | null
 }>()
-
 const emit = defineEmits(['saved', 'cancel'])
-
-const config = useRuntimeConfig()
+const {updateInvoice, createInvoice} = useInvoices()
 const isSaving = ref(false)
+const { initialData } = props
 
 const state = reactive({
-  supplier_name: props.initialData?.supplier_name || '',
-  net_amount: Number(props.initialData?.net_amount) || 0,
-  vat_amount: Number(props.initialData?.vat_amount) || 0,
-  due_date: props.initialData?.due_date ? props.initialData.due_date.split('T')[0] : '',
-  status: props.initialData?.status || 'pending'
+  number: initialData?.number || '',
+  supplier_name: initialData?.supplier_name || '',
+  supplier_tax_id: initialData?.supplier_tax_id || '',
+  currency: initialData?.currency || 'UAH',
+  issue_date: initialData?.issue_date ? initialData.issue_date.split('T')[0] : '',
+
+  net_amount: Number(initialData?.net_amount) || 0,
+  vat_amount: Number(initialData?.vat_amount) || 0,
+  due_date: initialData?.due_date ? initialData.due_date.split('T')[0] : '',
 })
 
-const isLocked = computed(() => props.initialData?.status !== 'pending' && !!props.initialData)
+const isLocked = computed(() => initialData?.status !== 'pending' && !!initialData)
+const isEditing = computed(() => !!initialData?.id)
+const schema = computed(() => isEditing.value ? invoiceUpdateSchema : invoiceCreateSchema)
 
 async function onSubmit() {
   isSaving.value = true
-
-  const isEditing = !!props.initialData?.id
-
-  const url = isEditing
-      ? `/invoices/${props.initialData?.id}`
-      : '/invoices'
-
-  const method = isEditing ? 'PUT' : 'POST'
-
   try {
-    await $fetch(url, {
-      method,
-      baseURL: config.public.apiBase,
-      body: {
-        supplier_name: state.supplier_name,
+    if (isEditing.value) {
+      await updateInvoice(initialData!.id, {
         net_amount: state.net_amount,
         vat_amount: state.vat_amount,
-        due_date: state.due_date,
-        status: state.status
-      }
-    })
-
+        due_date: state.due_date
+      })
+    } else {
+      await createInvoice({...state})
+    }
     emit('saved')
   } catch (err: any) {
     console.error('Помилка API:', err.data)
-
-    const backendErrors = err.data?.errors
-    if (backendErrors) {
-      alert('Перевірте правильність заповнення полів')
-    }
   } finally {
     isSaving.value = false
   }
@@ -85,14 +47,28 @@ async function onSubmit() {
 <template>
   <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
 
-    <UFormGroup label="Постачальник" name="supplier_name">
-      <UInput
-          v-model="state.supplier_name"
-          placeholder="Наприклад: ТОВ 'Енерго'"
-          :disabled="isLocked"
-          icon="i-heroicons-building-office"
-      />
-    </UFormGroup>
+    <template v-if="!isEditing">
+      <div class="grid grid-cols-2 gap-4">
+        <UFormGroup label="Номер" name="number">
+          <UInput v-model="state.number"/>
+        </UFormGroup>
+        <UFormGroup label="Валюта" name="currency">
+          <USelect v-model="state.currency" :options="['UAH', 'USD', 'EUR']"/>
+        </UFormGroup>
+      </div>
+
+      <UFormGroup label="Постачальник" name="supplier_name">
+        <UInput v-model="state.supplier_name"/>
+      </UFormGroup>
+
+      <UFormGroup label="Tax ID" name="supplier_tax_id">
+        <UInput v-model="state.supplier_tax_id"/>
+      </UFormGroup>
+
+      <UFormGroup label="Дата виписки" name="issue_date">
+        <UInput v-model="state.issue_date" type="date"/>
+      </UFormGroup>
+    </template>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <UFormGroup label="Сума без ПДВ (Net)" name="net_amount">

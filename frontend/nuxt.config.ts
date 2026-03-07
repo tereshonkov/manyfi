@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
   runtimeConfig: {
     public: {
-      apiBase: 'http://127.0.0.1:8000/api'
+      apiBase: 'http://localhost:8001/api'
     }
   },
   compatibilityDate: '2024-04-03'

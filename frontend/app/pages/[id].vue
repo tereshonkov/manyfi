@@ -2,18 +2,16 @@
 import { formatDate } from "~/utils/format";
 
 const route = useRoute()
-const config = useRuntimeConfig()
-
-const invoiceId = route.params.id
-
+const invoiceId = computed(() => {
+  const id = route.params.id
+  return Array.isArray(id) ? id[0] : id
+})
 const getStatusColor = (status: string): any => {
   const colors = { pending: 'orange', approved: 'green', rejected: 'red' }
   return colors[status as keyof typeof colors] || 'gray'
 }
-
-const { data: invoice, pending, error } = await useFetch<Invoice>(`/invoices/${invoiceId}`, {
-  baseURL: config.public.apiBase
-})
+const { getInvoice } = useInvoices()
+const { data: invoice, pending, error } = await getInvoice(invoiceId.value as string)
 </script>
 
 <template>

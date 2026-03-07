@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # 1. База данных MySQL
+  db:
+    image: mysql:8.0
+    container_name: invoice_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: invoice_db
+      MYSQL_USER: sail
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - invoice_network
+
+  # 2. Laravel Backend (PHP 8.2-FPM)
+  backend:
+    build:
+      context: ./backend # Проверь, чтобы папка называлась именно так
+      dockerfile: Dockerfile
+    container_name: invoice_api
+    restart: always
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:your_generated_key_here # Можно сгенерировать потом через php artisan key:generate
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: invoice_db
+      DB_USERNAME: sail
+      DB_PASSWORD: password
+    depends_on:
+      - db
+    ports:
+      - "8001:8000"
+    networks:
+      - invoice_network
+
+  # 3. Nuxt Frontend (Node.js 20)
+  frontend:
+    build:
+      context: ./frontend # Проверь, чтобы папка называлась именно так
+      dockerfile: Dockerfile
+    container_name: invoice_ui
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - NUXT_API_URL=http://backend:8000/api
+      - NUXT_PUBLIC_API_BASE=http://localhost:8001/api
+    depends_on:
+      - backend
+    networks:
+      - invoice_network
+
+networks:
+  invoice_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\DTO\InvoiceDTO;
+use App\DTO\UpdateInvoiceDTO;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Invoice;
@@ -81,7 +82,7 @@ class InvoiceController extends Controller
     public function update(UpdateInvoiceRequest $request, Invoice $invoice): JsonResponse
     {
         try {
-            $dto = InvoiceDTO::fromRequest($request);
+            $dto = UpdateInvoiceDTO::fromRequest($request);
             $updatedInvoice = $this->invoiceService->updateInvoice($invoice, $dto);
 
             return new JsonResponse(
