@@ -1,6 +1,6 @@
 export const useInvoices = () => {
     const config = useRuntimeConfig()
-    const apiBase = config.public.apiBase
+    const apiBase = import.meta.server ? config.apiUrl : config.public.apiBase
 
     const getInvoices = (page = 1) => {
         return useFetch<LaravelPagination<Invoice>>('/invoices', {

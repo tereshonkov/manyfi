@@ -5,29 +5,40 @@ const props = defineProps<{
 const emit = defineEmits(['saved', 'cancel'])
 const {updateInvoice, createInvoice} = useInvoices()
 const isSaving = ref(false)
-const { initialData } = props
+const initialDataRef = computed(() => props.initialData)
 
 const state = reactive({
-  number: initialData?.number || '',
-  supplier_name: initialData?.supplier_name || '',
-  supplier_tax_id: initialData?.supplier_tax_id || '',
-  currency: initialData?.currency || 'UAH',
-  issue_date: initialData?.issue_date ? initialData.issue_date.split('T')[0] : '',
+  number: initialDataRef.value?.number || '',
+  supplier_name: initialDataRef.value?.supplier_name || '',
+  supplier_tax_id: initialDataRef.value?.supplier_tax_id || '',
+  currency: initialDataRef.value?.currency || 'UAH',
+  issue_date: initialDataRef.value?.issue_date ? initialDataRef.value.issue_date.split('T')[0] : '',
 
-  net_amount: Number(initialData?.net_amount) || 0,
-  vat_amount: Number(initialData?.vat_amount) || 0,
-  due_date: initialData?.due_date ? initialData.due_date.split('T')[0] : '',
+  net_amount: Number(initialDataRef.value?.net_amount) || 0,
+  vat_amount: Number(initialDataRef.value?.vat_amount) || 0,
+  due_date: initialDataRef.value?.due_date ? initialDataRef.value.due_date.split('T')[0] : '',
 })
 
-const isLocked = computed(() => initialData?.status !== 'pending' && !!initialData)
-const isEditing = computed(() => !!initialData?.id)
+watch(initialDataRef, (newData) => {
+  state.number = newData?.number || ''
+  state.supplier_name = newData?.supplier_name || ''
+  state.supplier_tax_id = newData?.supplier_tax_id || ''
+  state.currency = newData?.currency || 'UAH'
+  state.issue_date = newData?.issue_date ? newData.issue_date.split('T')[0] : ''
+  state.net_amount = Number(newData?.net_amount) || 0
+  state.vat_amount = Number(newData?.vat_amount) || 0
+  state.due_date = newData?.due_date ? newData.due_date.split('T')[0] : ''
+}, { immediate: true })
+
+const isLocked = computed(() => initialDataRef.value?.status !== 'pending' && !!initialDataRef.value)
+const isEditing = computed(() => !!initialDataRef.value?.id)
 const schema = computed(() => isEditing.value ? invoiceUpdateSchema : invoiceCreateSchema)
 
 async function onSubmit() {
   isSaving.value = true
   try {
     if (isEditing.value) {
-      await updateInvoice(initialData!.id, {
+      await updateInvoice(initialDataRef.value!.id, {
         net_amount: state.net_amount,
         vat_amount: state.vat_amount,
         due_date: state.due_date
@@ -113,7 +124,7 @@ async function onSubmit() {
           color="primary"
           :loading="isSaving"
           :disabled="isLocked"
-          :label="props.initialData ? 'Оновити інвойс' : 'Створити інвойс'"
+          :label="isEditing ? 'Оновити інвойс' : 'Створити інвойс'"
       />
     </div>
   </UForm>

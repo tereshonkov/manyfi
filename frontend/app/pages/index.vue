@@ -8,6 +8,9 @@ const handleSelect = (row: any) => {
 const isOpen = ref<boolean>(false);
 const selectedInvoice = ref<Invoice | null>(null)
 const openModal = (invoice: Invoice | null = null) => {
+  if (invoice && typeof invoice === 'object' && 'isTrusted' in invoice) {
+    invoice = null
+  }
   selectedInvoice.value = invoice ? { ...invoice } : null
   isOpen.value = true
 }
@@ -15,11 +18,17 @@ const handleSaved = async () => {
   isOpen.value = false
   await refresh()
 }
+
+watch(isOpen, (newVal) => {
+  if (!newVal) {
+    selectedInvoice.value = null
+  }
+})
 </script>
 
 <template>
   <div class="mb-6 flex justify-end">
-    <UButton label="Створити інвойс" @click="openModal" />
+    <UButton label="Створити інвойс" @click="() => openModal()" />
   </div>
   <div v-if="error" class="mb-6">
     <UAlert
@@ -42,6 +51,7 @@ const handleSaved = async () => {
       </template>
       <div class="p-4" v-if="isOpen">
         <InvoiceForm
+            :key="selectedInvoice?.id || 'create'"
             :initial-data="selectedInvoice"
             @saved="handleSaved"
             @cancel="isOpen = false"
