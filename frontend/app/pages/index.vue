@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { getInvoices } = useInvoices()
-const { data: response, pending, refresh, error } = await getInvoices()
+const page = ref(1)
+const { data: response, pending, refresh, error } = await getInvoices(page)
 const handleSelect = (row: any) => {
   const id = row.id;
   navigateTo(`/${id}`);
@@ -63,6 +64,9 @@ watch(isOpen, (newVal) => {
   <InvoiceTable
       :items="response?.data || []"
       :loading="pending"
+      :total="response?.total || 0"
+      :page-size="response?.per_page || 10"
+      v-model:page="page"
       @select="handleSelect"
       @edit="openModal"
   />

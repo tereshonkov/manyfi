@@ -2,10 +2,11 @@ export const useInvoices = () => {
     const config = useRuntimeConfig()
     const apiBase = import.meta.server ? config.apiUrl : config.public.apiBase
 
-    const getInvoices = (page = 1) => {
+    const getInvoices = (page: Ref<number> | number = 1) => {
         return useFetch<LaravelPagination<Invoice>>('/invoices', {
             baseURL: apiBase,
             query: { page },
+            watch: [() => (isRef(page) ? page.value : page)],
             key: `invoices-list-page-${page}`,
         })
     }

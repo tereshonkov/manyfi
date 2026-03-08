@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { getStatusColor } from "~/utils/format";
-defineProps<{
+const props = defineProps<{
   items: any[]
   loading: boolean
+  total: number
+  page: number
+  pageSize: number
 }>()
 
-const emit = defineEmits(['select', 'edit'])
+const emit = defineEmits(['select', 'edit', 'update:page'])
 
 const columns = [
   {key: 'number', label: 'Number'},
@@ -15,6 +18,11 @@ const columns = [
   {key: 'due_date', label: 'Due Date'},
   { key: 'actions', label: '' }
 ]
+
+const currentPage = computed({
+  get: () => props.page,
+  set: (value) => emit('update:page', value)
+})
 </script>
 
 <template>
@@ -53,6 +61,14 @@ const columns = [
       />
     </template>
   </UTable>
+  <div v-if="total > pageSize" class="flex justify-center border-t border-gray-200 dark:border-gray-700 pt-4">
+    <UPagination
+        v-model="currentPage"
+        :page-count="pageSize"
+        :total="total"
+        :ui="{ rounded: 'rounded-full' }"
+    />
+  </div>
 </template>
 
 <style scoped>
